@@ -10,6 +10,18 @@ The backend half (intent definitions, executors, LLM wiring) lives in
 [intent-sdk](https://github.com/intent-as-a-service/intent-sdk). This repository handles **rendering
 and interaction only**: plain JavaScript, no runtime dependencies, ~64 KB unminified.
 
+**One core, two reference hosts.** Both embed the same build, byte for byte:
+
+| Reference host | Stack | Intents |
+|---|---|---|
+| [RuoYi-Vue-Plus](https://github.com/intent-as-a-service/RuoYi-Vue-Plus) | Vue 3 + Element Plus | 14 (system / monitor) |
+| [ruoyi-office](https://github.com/intent-as-a-service/ruoyi-office) | Vue 3 + Vben (Ant Design) | 40 (full CRM chain) |
+
+Each host publishes this directory from its own backend (for example Spring's
+`classpath:/intent-ui/**`) and consumes it from its front end through a relative `link:` dependency.
+There is no host-specific build of this package — which is the whole point of keeping it
+framework-agnostic.
+
 ---
 
 ## What it gives you
@@ -244,6 +256,16 @@ and try the catalog, slot form, execution and trace without writing any code.
 框架无关的**「意图即服务」前端组件**：把 AI 能力以*意图按钮*的形式嵌进业务页面，点一下就在当前页面出结果卡片——不再额外开一个聊天框。
 
 后端对应的意图定义、执行器、LLM 接入在 [`intent-sdk`](https://github.com/intent-as-a-service/intent-sdk)；本仓库只负责**渲染与交互**，不绑定任何前端框架（原生 JS，无运行时依赖，压缩前约 64 KB）。
+
+**一个核心，两个参考宿主。** 两边内嵌的是同一份产物，逐字节一致：
+
+| 参考宿主 | 技术栈 | 意图数 |
+|---|---|---|
+| [RuoYi-Vue-Plus](https://github.com/intent-as-a-service/RuoYi-Vue-Plus) | Vue 3 + Element Plus | 14 个（系统 / 监控） |
+| [ruoyi-office](https://github.com/intent-as-a-service/ruoyi-office) | Vue 3 + Vben（Ant Design） | 40 个（CRM 全链路） |
+
+两个宿主各自从自己的后端把本目录作为静态资源发布（例如 Spring 的 `classpath:/intent-ui/**`），
+前端再用相对 `link:` 依赖引入 —— **不存在某个宿主专用的版本**，这正是它保持框架无关的意义。
 
 ---
 
