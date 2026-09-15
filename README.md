@@ -3,26 +3,65 @@
 <a name="english"></a>
 # intent-ui-sdk
 
-A framework-agnostic front end for **Intent as a Service**. It embeds AI capabilities into business
-pages as *intent buttons*: click one and the result card renders right there — no separate chat box.
+### 64 KB of vanilla JS that turns any business page into an AI surface — and **never** opens a chat box
 
-The backend half (intent definitions, executors, LLM wiring) lives in
-[intent-sdk](https://github.com/intent-as-a-service/intent-sdk). This repository handles **rendering
-and interaction only**: plain JavaScript, no runtime dependencies, ~64 KB unminified.
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)
+![Runtime dependencies](https://img.shields.io/badge/runtime%20deps-0-brightgreen.svg)
+![Size](https://img.shields.io/badge/size-~64%20KB%20unminified-informational.svg)
+![Framework](https://img.shields.io/badge/framework-agnostic-blueviolet.svg)
+![Backend](https://img.shields.io/badge/backend-any%20(5%20endpoints)-orange.svg)
 
-**One core, two reference hosts.** Both embed the same build, byte for byte:
+**Intent as a Service, front end.** Instead of one global chat box, your business pages carry a row
+of **intent buttons**. Clicking one runs a declared intent and renders the **structured result card**
+right there, in the page the user is already working in.
+
+This repository is the rendering and interaction half — plain JavaScript, **no runtime dependencies,
+no framework lock-in**. Intent definitions, executors and LLM wiring live in
+[intent-sdk](https://github.com/intent-as-a-service/intent-sdk); this SDK only needs a backend that
+speaks **five endpoints**.
+
+```
+                      ⊙  one mount call
+                            │
+        ┌───────────────────▼───────────────────────────────┐
+        │  Intent as a Service                              │
+        │ ── 📌 Todos · Account risk scan ─────────────────  │
+        │     · "Zhang San", inactive 91 days          ▸     │
+        │     · "Li Si",     inactive 63 days          ▸     │
+        │ ── ⌘ Quick actions ──────────────────────────────  │
+        │     [Build a follow-up plan] [Show contacts]       │
+        │ ┌───────────────────────────────────────────────┐  │
+        │ │ Customer analysis report       AI · verified  │  │
+        │ │ text · key-value · table · list · badges      │  │
+        │ │ followups ▸ next intents ▸ thumbs up / down   │  │
+        │ └───────────────────────────────────────────────┘  │
+        │ ▸ Execution trace — 9 steps, 1 tool call           │
+        └────────────────────────────────────────────────────┘
+```
+
+**One core, two reference hosts.** Both embed the same build, byte for byte — there is no
+host-specific version of this package, and that is the whole point:
 
 | Reference host | Stack | Intents |
 |---|---|---|
-| [RuoYi-Vue-Plus](https://github.com/intent-as-a-service/RuoYi-Vue-Plus) | Vue 3 + Element Plus | 14 (system / monitor) |
 | [ruoyi-office](https://github.com/intent-as-a-service/ruoyi-office) | Vue 3 + Vben (Ant Design) | 40 (full CRM chain) |
-
-Each host publishes this directory from its own backend (for example Spring's
-`classpath:/intent-ui/**`) and consumes it from its front end through a relative `link:` dependency.
-There is no host-specific build of this package — which is the whole point of keeping it
-framework-agnostic.
+| [RuoYi-Vue-Plus](https://github.com/intent-as-a-service/RuoYi-Vue-Plus) | Vue 3 + Element Plus | 14 (system / monitor) |
 
 ---
+
+## Why developers pick it up
+
+- **No chat box, no prompt-writing users.** The system declares what can be asked; the user clicks.
+- **Framework-agnostic for real.** Vanilla JS core with a `window.IntentUI` global, an ESM entry for
+  Vite/webpack/Rollup, and a `.d.ts`. Vue 2, Vue 3, React, jQuery and server-rendered templates all
+  use the same build.
+- **Zero runtime dependencies, ~64 KB unminified.** No transitive tree to audit, no upgrade treadmill.
+- **Backend-agnostic.** Implement five endpoints and any backend works — including your own.
+- **It never touches your session.** Auth headers are produced by the host, per request; the SDK has
+  no idea what your login even looks like.
+- **Everything is in the box.** Floating entry point, intent menu, slot form, todo groups, result
+  cards, execution trace, history, feedback.
 
 ## What it gives you
 
@@ -38,35 +77,38 @@ framework-agnostic.
 | History & feedback | Execution history (`/history`), trace replay (`/trace/:id`), thumbs up/down feedback |
 
 **Design stance**: the host page owns business context and permissions; the SDK only does "fire an
-intent → render the result". Auth headers come from the host, and the SDK never touches the host's
-session.
-
----
+intent → render the result".
 
 ## Install
 
+> **Not on npm yet** — today the package is consumed straight from source, and it is two commands.
+> The manifest is already npm-shaped; publishing to the registry is the next step.
+
 ```bash
-pnpm add intent-ui-sdk
-# or npm i intent-ui-sdk / yarn add intent-ui-sdk
+git clone https://github.com/intent-as-a-service/intent-ui-sdk.git
 ```
 
-Local development, before the npm release:
-
 ```jsonc
-// package.json
+// package.json — point the dependency at the checkout
 "dependencies": {
-  "intent-ui-sdk": "link:../path/to/intent-ui-sdk"
+  "intent-ui-sdk": "link:../intent-ui-sdk"
 }
+```
+
+```bash
+pnpm install        # or npm install / yarn
 ```
 
 ```ts
 // vite.config.ts — when linking a directory outside the repo, allow it explicitly
 export default defineConfig({
-  server: { fs: { allow: ['.', '../path/to/intent-ui-sdk'] } },
+  server: { fs: { allow: ['.', '../intent-ui-sdk'] } },
 });
 ```
 
----
+> **Just want to look?** Open [`demo/index.html`](./demo/index.html) — a
+> zero-build debug console. Serve this directory as static files, point "API prefix" at your
+> backend, and try the catalog, slot form, execution and trace with no code at all.
 
 ## Quick start
 
@@ -165,7 +207,7 @@ IntentUI.configure({
 
 ## Backend contract
 
-The SDK depends on five endpoints — implement these and any backend works:
+Five endpoints, and any backend works:
 
 | Method | Path | Description |
 |---|---|---|
@@ -232,47 +274,91 @@ Only `package.json` + `js/*` + `css/*` are synced. **`index.html` and `js/demo-a
 host**: the debug console's API prefix, demo data and proxy prefix differ per host, so the script
 never overwrites them.
 
----
-
 ## Debug console
 
 `demo/index.html` is a zero-build console: serve the SDK directory as static files (or host this
 repository behind any static server), open the page, point "API prefix" at your host's intent prefix,
 and try the catalog, slot form, execution and trace without writing any code.
 
----
+## Related repositories
+
+| Repository | What it is |
+|---|---|
+| [intent-sdk](https://github.com/intent-as-a-service/intent-sdk) | The framework: protocol, execution engine, host SPI, Spring Boot starter |
+| [ruoyi-office](https://github.com/intent-as-a-service/ruoyi-office) | Reference host — 40 CRM intents |
+| [RuoYi-Vue-Plus](https://github.com/intent-as-a-service/RuoYi-Vue-Plus) | Reference host — 14 system / monitor intents |
 
 ## License
 
 [Apache-2.0](./LICENSE)
+
+**Keywords:** intent as a service · AI UI components · no chat box · framework-agnostic · vanilla JS ·
+Vue · React · agentic UI · result cards · execution trace
 
 ---
 
 <a name="chinese"></a>
 # intent-ui-sdk
 
-[English](#english) · **中文**
+**约 64 KB 原生 JS，把任意业务页面变成 AI 入口 —— 而且永远不开聊天框** · [English](#english) · **中文**
 
-框架无关的**「意图即服务」前端组件**：把 AI 能力以*意图按钮*的形式嵌进业务页面，点一下就在当前页面出结果卡片——不再额外开一个聊天框。
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+![版本](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.4.0-blue.svg)
+![运行时依赖](https://img.shields.io/badge/%E8%BF%90%E8%A1%8C%E6%97%B6%E4%BE%9D%E8%B5%96-0-brightgreen.svg)
+![体积](https://img.shields.io/badge/%E4%BD%93%E7%A7%AF-%E7%BA%A6%2064%20KB%EF%BC%88%E6%9C%AA%E5%8E%8B%E7%BC%A9%EF%BC%89-informational.svg)
+![框架](https://img.shields.io/badge/%E6%A1%86%E6%9E%B6-%E6%97%A0%E9%99%90%E5%88%B6-blueviolet.svg)
+![后端](https://img.shields.io/badge/%E5%90%8E%E7%AB%AF-%E4%BB%BB%E6%84%8F%EF%BC%885%20%E4%B8%AA%E7%AB%AF%E7%82%B9%EF%BC%89-orange.svg)
 
-后端对应的意图定义、执行器、LLM 接入在 [`intent-sdk`](https://github.com/intent-as-a-service/intent-sdk)；本仓库只负责**渲染与交互**，不绑定任何前端框架（原生 JS，无运行时依赖，压缩前约 64 KB）。
+**意图即服务的前端一半。** 不再是一个全局聊天框，而是把一排**意图按钮**放进业务页面：
+点一下即执行，**结构化结果卡片**就渲染在用户本来就在操作的那个页面里。
 
-**一个核心，两个参考宿主。** 两边内嵌的是同一份产物，逐字节一致：
+本仓只负责**渲染与交互**：原生 JavaScript，**零运行时依赖、不绑定框架**。意图定义、执行器、
+LLM 接入在 [intent-sdk](https://github.com/intent-as-a-service/intent-sdk)；本 SDK 只要求后端实现
+**5 个端点**。
+
+```
+                      ⊙  一行挂载
+                            │
+        ┌───────────────────▼───────────────────────────────┐
+        │  意图即服务                                        │
+        │ ── 📌 待办 · 账号风险体检 ────────────────────────  │
+        │     · 账号「张三」已 91 天未登录              ▸     │
+        │     · 账号「李四」已 63 天未登录              ▸     │
+        │ ── ⌘ 当前对象快捷条 ─────────────────────────────  │
+        │     [生成跟进计划] [看看他们的联系人]               │
+        │ ┌───────────────────────────────────────────────┐  │
+        │ │ 客户经营分析报告              AI · 已通过校验  │  │
+        │ │ 文本 · 键值 · 表格 · 列表 · 徽标               │  │
+        │ │ 下一步 ▸ 推荐意图 ▸ 点赞 / 点踩                │  │
+        │ └───────────────────────────────────────────────┘  │
+        │ ▸ 执行轨迹 —— 9 个步骤，1 次工具调用                │
+        └────────────────────────────────────────────────────┘
+```
+
+**一个核心，两个参考宿主。** 两边内嵌的是同一份产物，逐字节一致 ——
+**不存在某个宿主专用的版本**，这正是它保持框架无关的意义：
 
 | 参考宿主 | 技术栈 | 意图数 |
 |---|---|---|
-| [RuoYi-Vue-Plus](https://github.com/intent-as-a-service/RuoYi-Vue-Plus) | Vue 3 + Element Plus | 14 个（系统 / 监控） |
 | [ruoyi-office](https://github.com/intent-as-a-service/ruoyi-office) | Vue 3 + Vben（Ant Design） | 40 个（CRM 全链路） |
-
-两个宿主各自从自己的后端把本目录作为静态资源发布（例如 Spring 的 `classpath:/intent-ui/**`），
-前端再用相对 `link:` 依赖引入 —— **不存在某个宿主专用的版本**，这正是它保持框架无关的意义。
+| [RuoYi-Vue-Plus](https://github.com/intent-as-a-service/RuoYi-Vue-Plus) | Vue 3 + Element Plus | 14 个（系统 / 监控） |
 
 ---
+
+## 为什么值得用
+
+- **没有聊天框，也不用教用户写提示词**：系统声明能问什么，用户只需要点。
+- **真正的框架无关**：原生 JS 挂 `window.IntentUI`，另提供给 Vite/webpack/Rollup 的 ESM 入口与
+  `.d.ts`；Vue2 / Vue3 / React / jQuery / 服务端模板共用同一份产物。
+- **零运行时依赖、压缩前约 64 KB**：没有传递依赖要审，也没有升级链要跟。
+- **后端无关**：实现 5 个端点即可对接任意后端，包括你自己写的。
+- **不碰宿主登录态**：鉴权头由宿主每次请求现取，SDK 根本不知道你的登录长什么样。
+- **能力全套自带**：悬浮入口、意图菜单、槽位表单、待办分组、结果卡片、执行轨迹、历史、反馈。
 
 ## 它提供什么
 
 | 能力 | 说明 |
-| --- | --- |
+|---|---|
 | 悬浮入口 | 可拖拽的 AI 悬浮球 + 抽屉面板，位置记在 `localStorage`，一行接入全站 |
 | 内嵌面板 | 也可把面板挂到页面里的任意容器，做成"页面内的 AI 区域" |
 | 意图菜单 | 按当前页面（`page`）装载该页面可用的意图，支持口语化匹配排序 |
@@ -280,36 +366,39 @@ and try the catalog, slot form, execution and trace without writing any code.
 | 待办与推荐 | 后端按页面返回的待办分组 + 下一步推荐（`nextIntents`） |
 | 结果卡片 | 统一信封渲染：文本 / 键值 / 表格 / 列表 / 徽标 五类区块 |
 | 执行轨迹 | 展示一次意图执行的步骤与工具调用，用于解释"AI 为什么这么答" |
-| 历史与反馈 | 执行历史（`/history`）+ 轨迹回放（`/trace/:id`）+ 点踩反馈 |
+| 历史与反馈 | 执行历史（`/history`）+ 轨迹回放（`/trace/:id`）+ 点赞点踩反馈 |
 
-**核心设计取向**：宿主页面掌握业务上下文与权限，SDK 只做"发起意图 → 展示结果"。鉴权头由宿主动态提供，SDK 不碰宿主的登录态。
-
----
+**核心设计取向**：宿主页面掌握业务上下文与权限，SDK 只做"发起意图 → 展示结果"。
 
 ## 安装
 
+> **尚未发布到 npm**：当前以源码方式接入，两条命令即可。包结构已经是 npm 形态，发布是下一步。
+
 ```bash
-pnpm add intent-ui-sdk
-# 或 npm i intent-ui-sdk / yarn add intent-ui-sdk
+git clone https://github.com/intent-as-a-service/intent-ui-sdk.git
 ```
 
-本地开发（npm 尚未发布时的接入方式）：
-
 ```jsonc
-// package.json
+// package.json —— 依赖直接指向该目录
 "dependencies": {
-  "intent-ui-sdk": "link:../path/to/intent-ui-sdk"
+  "intent-ui-sdk": "link:../intent-ui-sdk"
 }
+```
+
+```bash
+pnpm install        # 或 npm install / yarn
 ```
 
 ```ts
 // vite.config.ts —— 用 link: 指向仓库外部目录时，需要放行该目录
 export default defineConfig({
-  server: { fs: { allow: ['.', '../path/to/intent-ui-sdk'] } },
+  server: { fs: { allow: ['.', '../intent-ui-sdk'] } },
 });
 ```
 
----
+> **只想先看看？** 直接打开 [`demo/index.html`](./demo/index.html) 零构建调试台：
+> 把本目录作为静态资源发布，把"接口前缀"指向你的后端，不写一行代码就能试意图目录、
+> 槽位表单、执行与轨迹。
 
 ## 快速接入
 
@@ -337,7 +426,8 @@ watch(() => route.path, () => {
 });
 ```
 
-> v0.4.0 起，重开面板时 SDK 也会自己检测页面是否变化并复位；宿主显式调用 `reset()` 仍然是更稳的做法（尤其是面板一直开着、只切菜单的场景）。
+> v0.4.0 起，重开面板时 SDK 也会自己检测页面是否变化并复位；宿主显式调用 `reset()` 仍然是更稳的做法
+> （尤其是面板一直开着、只切菜单的场景）。
 
 ### 2. 内嵌面板
 
@@ -361,7 +451,7 @@ IntentUI.mount({
 IntentUI.configure({
   fetcher: async (url, options, headers) => {
     const res = await myHttp.request({ url, method: options?.method ?? 'GET', data: options?.body, headers });
-    return res.data;      // { code, data } 信封或 data 本体都行
+    return res.data;      // { code, data } 信封，或直接返回数据体
   },
 });
 ```
@@ -371,7 +461,7 @@ IntentUI.configure({
 ## 配置项（`IntentUI.configure` / 各 `mount*` 选项）
 
 | 选项 | 默认值 | 说明 |
-| --- | --- | --- |
+|---|---|---|
 | `apiPrefix` | `/intent` | 后端意图接口前缀，**含宿主的 API 网关前缀** |
 | `basePath` | `''` | 拼在 `apiPrefix` 之前，宿主部署在子路径时用 |
 | `token` | `null` | 静态 token；登录态会过期时请改用 `authHeaders` |
@@ -404,17 +494,18 @@ IntentUI.configure({
 
 ## 后端契约
 
-SDK 只依赖 5 个端点，任何后端按此实现即可对接：
+只依赖 5 个端点，任何后端按此实现即可对接：
 
 | 方法 | 路径 | 说明 |
-| --- | --- | --- |
+|---|---|---|
 | `GET` | `{prefix}/catalog?page=<page>` | 意图目录（含该页面的待办分组 / 推荐），不传 `page` = 全量 |
 | `POST` | `{prefix}/execute` | 执行意图，返回结果信封 |
 | `GET` | `{prefix}/history?limit=<n>` | 执行历史 |
 | `GET` | `{prefix}/trace/<traceId>` | 单次执行的步骤/工具轨迹 |
 | `POST` | `{prefix}/feedback` | 结果反馈（点赞/点踩 + 备注） |
 
-响应信封兼容两种成功码：`code === 0`（SDK 参考宿主）与 `code === 200`（RuoYi-Vue-Plus 的 `R<T>`）。两种情况都取 `data`；没有 `code` 字段时把响应体本身当作数据。
+响应信封兼容两种成功码：`code === 0`（SDK 参考宿主）与 `code === 200`（RuoYi-Vue-Plus 的 `R<T>`）。
+两种情况都取 `data`；没有 `code` 字段时把响应体本身当作数据。
 
 ### 结果信封（`/execute` 的 `data`）
 
@@ -434,7 +525,8 @@ SDK 只依赖 5 个端点，任何后端按此实现即可对接：
 }
 ```
 
-`blocks[].kind` 支持 `text` / `kv` / `table` / `list` / `badges`；未知 `kind` 会被忽略而不是报错，便于后端先行扩展。
+`blocks[].kind` 支持 `text` / `kv` / `table` / `list` / `badges`；未知 `kind` 会被忽略而不是报错，
+便于后端先行扩展。
 
 ---
 
@@ -454,7 +546,8 @@ intent-ui-sdk/
 
 ### 单一真源与宿主副本
 
-后端要把 SDK 作为静态资源对外提供（例如 Spring 的 `classpath:/intent-ui/**`），因此每个宿主目录里都会有一份**产物副本**。这些副本必须由脚本生成，**不要手工编辑**，否则多个宿主之间必然各自漂移：
+后端要把 SDK 作为静态资源对外提供（例如 Spring 的 `classpath:/intent-ui/**`），因此每个宿主目录里
+都会有一份**产物副本**。这些副本必须由脚本生成，**不要手工编辑**，否则多个宿主之间必然各自漂移：
 
 ```bash
 node scripts/sync.mjs            # 同步到内置的默认宿主目录
@@ -462,16 +555,24 @@ node scripts/sync.mjs --check    # 只校验；有漂移则退出码 1（可放�
 node scripts/sync.mjs <dir>...   # 同步到指定目录
 ```
 
-同步范围只有 `package.json` + `js/*` + `css/*`。**`index.html` 与 `js/demo-app.js` 属于宿主自持**：调试台的 `apiPrefix`、演示数据、代理前缀各宿主不同，脚本不会覆盖它们。
-
----
+同步范围只有 `package.json` + `js/*` + `css/*`。**`index.html` 与 `js/demo-app.js` 属于宿主自持**：
+调试台的 `apiPrefix`、演示数据、代理前缀各宿主不同，脚本不会覆盖它们。
 
 ## 调试台
 
-`demo/index.html` 是一个零构建的调试台：把 SDK 目录作为静态资源发布（或直接用任意静态服务器托管本仓库），打开页面、把"接口前缀"改成宿主的意图前缀，即可在不写代码的情况下试意图目录、槽位表单、执行与轨迹。
+`demo/index.html` 是一个零构建的调试台：把 SDK 目录作为静态资源发布（或直接用任意静态服务器托管本仓），
+打开页面、把"接口前缀"改成宿主的意图前缀，即可在不写代码的情况下试意图目录、槽位表单、执行与轨迹。
 
----
+## 相关仓库
+
+| 仓库 | 说明 |
+|---|---|
+| [intent-sdk](https://github.com/intent-as-a-service/intent-sdk) | 框架本体：协议、执行引擎、宿主 SPI、Spring Boot Starter |
+| [ruoyi-office](https://github.com/intent-as-a-service/ruoyi-office) | 参考宿主 —— 40 个 CRM 意图 |
+| [RuoYi-Vue-Plus](https://github.com/intent-as-a-service/RuoYi-Vue-Plus) | 参考宿主 —— 14 个系统 / 监控意图 |
 
 ## License
 
 [Apache-2.0](./LICENSE)
+
+**关键词**：意图即服务 · 内嵌 AI 组件 · 去聊天框 · 框架无关 · 原生 JS · Vue · React · 结果卡片 · 执行轨迹
